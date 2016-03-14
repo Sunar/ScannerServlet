@@ -7,11 +7,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletException;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.DataInputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 /**
  * Created by IntelliJ IDEA.
@@ -96,9 +95,31 @@ public class ScannerServlet extends HttpServlet {
                     int i = st2.executeUpdate("update SC30 set SP1007 = (select ID from SC1020 where SP5227 = '" + addrBarcode + "') where SP667 = '" + barcode + "'");
                     if(i > 0){
                         st2 = p.createStatement();
-                        ResultSet rs2 = st2.executeQuery("select b.DESCR as addr from SC30 a, SC1020 b where SP667 = '" + barcode + "' and a.SP1007 = b.ID");
-                        if(rs2.next())
-                        res.put("changed", "yes: " + rs2.getString("addr"));
+                        try {
+                            ResultSet rs2 = st2.executeQuery("select b.DESCR as addr from SC30 a, SC1020 b where SP667 = '" + barcode + "' and a.SP1007 = b.ID");
+                            if(rs2.next())
+                            res.put("changed", "yes: " + rs2.getString("addr"));
+                            //BufferedWriter outWriter = null;
+                            try
+                                {
+                                    //FileWriter fstream = new FileWriter("out.txt", true); //true tells to append data.
+                                    //outWriter = new BufferedWriter(fstream);
+                                    //out.write("" + rs.getString("name") + " " + barcode + " " + rs2.getString("addr") + "\n");
+                                    File outputFile = new File(getServletContext().getRealPath("/") + "changes.txt");
+                                    FileWriter fout = new FileWriter(outputFile, true);
+                                    String date = new SimpleDateFormat("dd-MM-yyyy HH:mm").format(Calendar.getInstance().getTime());
+                                    fout.write(""+ date + " " + rs.getString("name").trim() + " " + rs.getString("addr").trim() + " " + rs2.getString("addr").trim() + System.lineSeparator());
+                                    fout.close();
+                                }
+                                catch (IOException e)
+                                {
+                                    System.err.println("Error: " + e.getMessage());
+                                }
+                        }
+                        catch (SQLException e){
+                            res.put("changed", "no, error");
+                        }
+
                     }
                 }
                 //address = rs.getString("addr");
